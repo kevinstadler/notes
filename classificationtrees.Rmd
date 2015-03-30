@@ -1,0 +1,79 @@
+---
+title: Classification trees with \texttt{rpart}
+author: Kevin Stadler
+date: November 24, 2014
+output: pdf_document
+classoption: a4paper
+---
+
+```{r}
+# install.packages("rpart")
+library(rpart)
+```
+
+`rpart()` fits a regression or classification tree, depending on the type of the response variable -- when it is a string or factor, it attempts to find the simplest model that predicts the observed categorical outcomes based on the predictor variables. Let's try to predict some string suffixes (i.e. a categorical outcome):
+
+```{r}
+d <- read.csv("rewrite.csv", stringsAsFactors=FALSE)
+
+rpart(q_suffix ~ number + noun + verb, d, control=rpart.control(minsplit=2))
+
+rpart(v_suffix ~ number + noun + verb, d, control=rpart.control(minsplit=2))
+
+rpart(n_suffix ~ number + noun + verb, d, control=rpart.control(minsplit=2))
+```
+We can even draw the trees, simply by calling `plot()` on the resulting test objects. The default plots are not very beautiful, but the `rpart.plot` package allows for rather beautiful plots using `prp()` (check http://www.milbo.org/rpart-plot/prp.pdf for more plotting options).
+
+```{r}
+t <- rpart(n_suffix ~ number + noun + verb, d, control=rpart.control(minsplit=2))
+
+# install.packages("rpart.plot")
+library(rpart.plot)
+prp(t, type=4, extra=4)
+```
+
+# Inconsistent data
+
+Pool data together and look at the noun suffix tree (because it's the simplest): twice the amount of the same data results in the same tree as above:
+
+```{r}
+d2 <- rbind(d,d)
+rpart(n_suffix ~ number + noun + verb, d2, control=rpart.control(minsplit=2))
+```
+
+Let's pretend data pooling creates heterogenous input, i.e. one participant marks one of the singulars differently in one of its items:
+
+```{r}
+d2[1, "n_suffix"] <- "foo"
+
+rpart(n_suffix ~ number + noun + verb, d2, control=rpart.control(minsplit=2))
+```
+
+It's still the same tree, but because the data is heterogeneous it's not possible to make a deterministic tree, i.e. the terminal node is probabilistic:
+
+    ##    2) number=sing 18  1 o (0.05556 0.94444444 0.00000000) *
+
+aka the default suffix is "o" but there is 1 exception to it (~5.6% of the 18 datapoints) that cannot be accounted for based on the predictors that are available.
+
+# System complexity vs. pooling complexity
+
+What's kind of nice about these classification trees is that they selectively allow you to tease apart systematic complexity (from consistent but tedious exceptions of one slot exhibited by all speakers) and complexity arising from noise/pooling (i.e. inconsistent use of suffixes within one slot). If you're interested to know how much of the variability is actually from pooling you could compare the tree created from pooled data with one created with the same model but *including speaker identity as a predictor*:
+
+```{r eval=FALSE}
+# ain't got no data for this
+rpart(n_suffix ~ number + noun + verb + SPEAKER, d, control=rpart.control(minsplit=2))
+```
+
+If you're interested in quantifying the complexity of the classification trees beyond their number of splits, terminal nodes and their depth, probz use the `summary()` command to find out stuff about the probability of passing through specific nodes, the explanatory `work' carried out by specific splits in the tree, etc. Presumably some of these measures will be affected by the amount of data your tree is based on, while others won't be. This is the summary of the pure pooled data (contains every datapoint twice):
+
+```{r}
+summary(rpart(n_suffix ~ number + noun + verb, rbind(d,d), control=rpart.control(minsplit=2)))
+```
+
+Compare this to the summary of the tree generated for the data with the one fudged singular marker:
+
+```{r}
+summary(rpart(n_suffix ~ number + noun + verb, d2, control=rpart.control(minsplit=2)))
+```
+
+For more on how to interpret `rpart` objects: http://cran.r-project.org/web/packages/rpart/rpart.pdf#rpart.object
