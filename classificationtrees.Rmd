@@ -14,7 +14,7 @@ library(rpart)
 `rpart()` fits a regression or classification tree, depending on the type of the response variable -- when it is a string or factor, it attempts to find the simplest model that predicts the observed categorical outcomes based on the predictor variables. Let's try to predict some string suffixes (i.e. a categorical outcome):
 
 ```{r}
-d <- read.csv("rewrite.csv", stringsAsFactors=FALSE)
+d <- read.csv("classificationtrees.csv", stringsAsFactors=FALSE)
 
 rpart(q_suffix ~ number + noun + verb, d, control=rpart.control(minsplit=2))
 
