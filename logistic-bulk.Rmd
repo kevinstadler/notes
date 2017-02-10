@@ -14,7 +14,7 @@ is that it only reaches its initial value (0) and final value (1 or $K$) *in the
 
 ```{r echo=FALSE, results='asis'}
 logistic <- function(t, r=1, t0=0)
-  dlogis(t, t0, 1/r)
+  plogis(t, t0, 1/r)
 #  1/(1+exp(-r*(t-t0)))
 
 # returns the overall time needed for the logistic function to cover the amount
